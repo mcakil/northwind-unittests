@@ -1,10 +1,7 @@
 package com.etiya.northwind.entities.concretes;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.persistence.*;
 import java.util.List;
@@ -15,6 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode
+@Builder
 public class Customer {
     @Id
     @Column(name = "customer_id")
@@ -35,5 +33,6 @@ public class Customer {
 
     @OneToOne(mappedBy = "customer")
     private Cart cart;
+
 
 }

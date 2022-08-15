@@ -15,6 +15,7 @@ import com.etiya.northwind.core.results.Result;
 import com.etiya.northwind.core.results.SuccessDataResult;
 import com.etiya.northwind.core.results.SuccessResult;
 import com.etiya.northwind.dataAccess.abstracts.EmployeeRepository;
+import com.etiya.northwind.entities.concretes.Customer;
 import com.etiya.northwind.entities.concretes.Employee;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -23,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,6 +41,7 @@ public class EmployeeManager implements EmployeeService {
 
     @Override
     public Result add(CreateEmployeeRequest createEmployeeRequest) {
+        isEmployeeExist(createEmployeeRequest.getEmployeeId());
         checkIfReportsToExceeds(createEmployeeRequest.getReportsTo());
         Employee employee = this.modelMapperService.forRequest().map(createEmployeeRequest, Employee.class);
         employee.setReportsTo(employeeRepository.findById(createEmployeeRequest.getReportsTo()).orElseThrow(()-> new BusinessException("No employee found to report to.")));
@@ -48,8 +51,19 @@ public class EmployeeManager implements EmployeeService {
 
     @Override
     public Result update(UpdateEmployeeRequest updateEmployeeRequest) {
-        Employee employee = this.modelMapperService.forRequest().map(updateEmployeeRequest, Employee.class);
-        employeeRepository.save(employee);
+        Optional<Employee> optionalEmployee = employeeRepository.findById(updateEmployeeRequest.getEmployeeId());
+        optionalEmployee.ifPresentOrElse(employee ->
+                {
+                    employee = this.modelMapperService
+                            .forRequest()
+                            .map(updateEmployeeRequest, Employee.class);
+                    employeeRepository.save(employee);
+                },
+                () -> {
+                    throw new BusinessException("employee not found");
+                });
+
+
         return new SuccessResult("Updated");
     }
 
@@ -100,6 +114,12 @@ public class EmployeeManager implements EmployeeService {
     private void checkEmployeeExists(int employeeId) {
         if (!employeeRepository.existsById(employeeId)){
             throw new BusinessException("Employee does not exist.");
+        }
+    }
+
+    private void isEmployeeExist(int employeeId) {
+        if (employeeRepository.existsById(employeeId)){
+            throw new BusinessException("Employee is already exist.");
         }
     }
 

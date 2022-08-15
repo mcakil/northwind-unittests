@@ -35,10 +35,12 @@ public class CartManager implements CartService {
     }
     @Override
     public Cart getCart(String customerId){
-        return cartRepository.getByCustomerId(customerId);
+        return cartRepository.getByCustomerId(customerId).get();
     }
+
     @Override
     public Result add(CreateCartRequest createCartRequest) {
+        checkCartExists(createCartRequest.getCustomerId());
         Cart cart = new Cart(); //this.modelMapperService.forRequest().map(createCartRequest, Cart.class);
         cart.setCustomer(customerService.findById(createCartRequest.getCustomerId()));
         cartRepository.save(cart);
@@ -65,5 +67,10 @@ public class CartManager implements CartService {
         return new SuccessDataResult<>(response);
     }
 
+    private void checkCartExists(String customerId) {
+        if (cartRepository.getByCustomerId(customerId).isPresent()) {
+            throw new BusinessException("Müşterinin sepeti zaten var.");
+        }
+    }
 
 }

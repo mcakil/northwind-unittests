@@ -16,12 +16,14 @@ import com.etiya.northwind.core.results.SuccessDataResult;
 import com.etiya.northwind.core.results.SuccessResult;
 import com.etiya.northwind.dataAccess.abstracts.CategoryRepository;
 import com.etiya.northwind.entities.concretes.Category;
+import com.etiya.northwind.entities.concretes.Category;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,6 +40,7 @@ public class CategoryManager implements CategoryService {
 
     @Override
     public Result add(CreateCategoryRequest createCategoryRequest) {
+        checkCategoryExists(createCategoryRequest.getCategoryId());
         checkIfCategoryNameExists(createCategoryRequest.getCategoryName());
         Category category = this.modelMapperService.forRequest().map(createCategoryRequest, Category.class);
         categoryRepository.save(category);
@@ -46,8 +49,19 @@ public class CategoryManager implements CategoryService {
 
     @Override
     public Result update(UpdateCategoryRequest updateCategoryRequest) {
-        Category category = this.modelMapperService.forRequest().map(updateCategoryRequest, Category.class);
-        categoryRepository.save(category);
+        Optional<Category> optionalCategory = categoryRepository.findById(updateCategoryRequest.getCategoryId());
+        optionalCategory.ifPresentOrElse(category ->
+                {
+                    category = this.modelMapperService
+                            .forRequest()
+                            .map(updateCategoryRequest, Category.class);
+                    categoryRepository.save(category);
+                },
+                () -> {
+                    throw new BusinessException("category not found");
+                });
+
+
         return new SuccessResult("Updated");
     }
 
@@ -96,7 +110,7 @@ public class CategoryManager implements CategoryService {
     }
 
     private void checkCategoryExists(int categoryId) {
-        if (!categoryRepository.existsById(categoryId)){
+        if (categoryRepository.existsById(categoryId)){
             throw new BusinessException("Category does not exist.");
         }
     }

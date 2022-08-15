@@ -22,7 +22,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,7 +41,7 @@ public class CustomerManager implements CustomerService {
 
     @Override
     public Result add(CreateCustomerRequest createCustomerRequest) {
-        checkCustomerExists(createCustomerRequest.getCustomerId());
+        isCustomerExists(createCustomerRequest.getCustomerId());
         Customer customer = this.modelMapperService.forRequest().map(createCustomerRequest, Customer.class);
         customerRepository.save(customer);
         return new SuccessResult("Added");
@@ -48,10 +50,18 @@ public class CustomerManager implements CustomerService {
     @Override
     public Result update(UpdateCustomerRequest updateCustomerRequest) {
 
-        customerRepository.findById(updateCustomerRequest.getCustomerId()).orElseThrow(()->new BusinessException("Can't update non-existent customer."));
+        Optional<Customer> optionalCustomer = customerRepository.findById(updateCustomerRequest.getCustomerId());
+        optionalCustomer.ifPresentOrElse(customer ->
+                {
+                    customer = this.modelMapperService
+                            .forRequest()
+                            .map(updateCustomerRequest, Customer.class);
+                    customerRepository.save(customer);
+                },
+                () -> {
+                    throw new BusinessException("customer not found");
+                });
 
-        Customer customer = this.modelMapperService.forRequest().map(updateCustomerRequest, Customer.class);
-        customerRepository.save(customer);
 
         return new SuccessResult("Updated");
     }
@@ -82,7 +92,7 @@ public class CustomerManager implements CustomerService {
 
     @Override
     public DataResult<PageDataResponse<CustomerListResponse>> getByPage(PageDataRequest pageDataRequest) {
-        Pageable pageable = PageRequest.of(pageDataRequest.getNumber()-1, pageDataRequest.getItemAmount());
+        Pageable pageable = PageRequest.of(pageDataRequest.getNumber() - 1, pageDataRequest.getItemAmount());
         return new SuccessDataResult<>(getPageDataResponse(pageDataRequest.getNumber(), pageable));
     }
 
@@ -104,10 +114,11 @@ public class CustomerManager implements CustomerService {
         return new PageDataResponse<CustomerListResponse>(response, pages.getTotalPages(), pages.getTotalElements(), pageNumber);
     }
 
-    public void checkCustomerExists(String customerId) {
-        if (customerRepository.existsById(customerId)){
+    public void isCustomerExists(String customerId) {
+        if (customerRepository.existsById(customerId)) {
             throw new BusinessException("Customer already exists.");
         }
     }
+
 
 }

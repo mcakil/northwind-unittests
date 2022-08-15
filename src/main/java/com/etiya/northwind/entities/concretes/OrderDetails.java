@@ -2,6 +2,7 @@ package com.etiya.northwind.entities.concretes;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -14,6 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @IdClass(OrderDetailsId.class)
+@Builder
 public class OrderDetails{
 
     @Id

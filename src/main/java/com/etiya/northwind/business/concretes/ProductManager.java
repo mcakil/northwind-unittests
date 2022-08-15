@@ -15,6 +15,7 @@ import com.etiya.northwind.core.results.SuccessDataResult;
 import com.etiya.northwind.core.results.SuccessResult;
 import com.etiya.northwind.dataAccess.abstracts.ProductRepository;
 import com.etiya.northwind.entities.concretes.Product;
+import com.etiya.northwind.entities.concretes.Product;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,6 +40,7 @@ public class ProductManager implements ProductService {
 
     @Override
     public Result add(CreateProductRequest createProductRequest) {
+        checkProductExists(createProductRequest.getProductId());
         checkIfProductNameExists(createProductRequest.getProductName());
         checkIfCategoryLimitExceeds(createProductRequest.getCategoryId());
         Product product = this.modelMapperService.forRequest().map(createProductRequest, Product.class);
@@ -47,14 +50,24 @@ public class ProductManager implements ProductService {
 
     @Override
     public Result update(UpdateProductRequest updateProductRequest) {
-        Product product = this.modelMapperService.forRequest().map(updateProductRequest, Product.class);
-        productRepository.save(product);
+        Optional<Product> optionalProduct = productRepository.findById(updateProductRequest.getProductId());
+        optionalProduct.ifPresentOrElse(product ->
+                {
+                    product = this.modelMapperService
+                            .forRequest()
+                            .map(updateProductRequest, Product.class);
+                    productRepository.save(product);
+                },
+                () -> {
+                    throw new BusinessException("product not found");
+                });
+
+
         return new SuccessResult("Updated");
     }
 
     @Override
     public Result delete(int productId) {
-        checkProductExists(productId);
         this.productRepository.deleteById(productId);
         return new SuccessResult("Deleted successfully.");
     }
@@ -109,7 +122,7 @@ public class ProductManager implements ProductService {
     }
 
     private void checkProductExists(int productId) {
-        if (!productRepository.existsById(productId)){
+        if (productRepository.existsById(productId)){
             throw new BusinessException("Product does not exist.");
         }
     }

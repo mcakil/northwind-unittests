@@ -1,15 +1,13 @@
 package com.etiya.northwind.business.requests.customerRequests;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.validation.constraints.NotNull;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class CreateCustomerRequest {
 
     @NotNull

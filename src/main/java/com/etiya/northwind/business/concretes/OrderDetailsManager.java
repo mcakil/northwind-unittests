@@ -37,9 +37,9 @@ public class OrderDetailsManager implements OrderDetailsService {
         this.modelMapperService = modelMapperService;
     }
 
-    public void save(OrderDetails orderDetails){
+    /*public void save(OrderDetails orderDetails){
         orderDetailsRepository.save(orderDetails);
-    }
+    }*/
 
     @Override
     public Result add(CreateOrderDetailRequest createOrderDetailsRequest) {

@@ -17,7 +17,7 @@ public interface OrderDetailsService {
     Result add(CreateOrderDetailRequest createOrderDetailsRequest);
     Result update(UpdateOrderDetailRequest updateOrderDetailsRequest);
     Result delete(OrderDetailsId orderDetailId);
-    public void save(OrderDetails orderDetails);
+    /*public void save(OrderDetails orderDetails);*/
     DataResult<List<OrderDetailsListResponse>> getAll();
     DataResult<OrderDetailsListResponse> getById(OrderDetailsId orderDetailsId);
 

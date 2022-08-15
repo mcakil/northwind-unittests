@@ -16,6 +16,7 @@ import com.etiya.northwind.core.results.SuccessDataResult;
 import com.etiya.northwind.core.results.SuccessResult;
 import com.etiya.northwind.dataAccess.abstracts.SupplierRepository;
 import com.etiya.northwind.entities.concretes.Supplier;
+import com.etiya.northwind.entities.concretes.Supplier;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,6 +41,7 @@ public class SupplierManager implements SupplierService {
 
     @Override
     public Result add(CreateSupplierRequest createSupplierRequest) {
+        checkSupplierExists(createSupplierRequest.getSupplierId());
         Supplier supplier = this.modelMapperService.forRequest().map(createSupplierRequest, Supplier.class);
         supplierRepository.save(supplier);
         return new SuccessResult("Added");
@@ -46,14 +49,24 @@ public class SupplierManager implements SupplierService {
 
     @Override
     public Result update(UpdateSupplierRequest updateSupplierRequest) {
-        Supplier supplier = this.modelMapperService.forRequest().map(updateSupplierRequest, Supplier.class);
-        supplierRepository.save(supplier);
+        Optional<Supplier> optionalSupplier = supplierRepository.findById(updateSupplierRequest.getSupplierId());
+        optionalSupplier.ifPresentOrElse(supplier ->
+                {
+                    supplier = this.modelMapperService
+                            .forRequest()
+                            .map(updateSupplierRequest, Supplier.class);
+                    supplierRepository.save(supplier);
+                },
+                () -> {
+                    throw new BusinessException("supplier not found");
+                });
+
+
         return new SuccessResult("Updated");
     }
 
     @Override
     public Result delete(int supplierId) {
-        checkSupplierExists(supplierId);
         this.supplierRepository.deleteById(supplierId);
         return new SuccessResult("Deleted successfully.");
     }
@@ -96,7 +109,7 @@ public class SupplierManager implements SupplierService {
     }
 
     private void checkSupplierExists(int supplierId) {
-        if (!supplierRepository.existsById(supplierId)){
+        if (supplierRepository.existsById(supplierId)){
             throw new BusinessException("Supplier does not exist.");
         }
     }
